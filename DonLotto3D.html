@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>DonLotto 3D</title>
+  <link rel="stylesheet" href="locked/style.css">
+
+  <!-- Three.js einbinden -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+</head>
+<body>
+  <div id="wrapper">
+    <div id="title">🎀 DonLotto 3D 🎀</div>
+    <div id="subtitle">
+      Zuerst Zahlen, dann Zusatz (Sterne oder Zusatzzahlen) ✨
+    </div>
+    <div id="gameContainer">
+     <div id="canvas-area">
+      <div id="canvas-bg"></div>
+      <canvas id="lotto-canvas" width="800" height="500"></canvas>
+     </div>
+      <div id="ui">
+        <div id="controlsLeft">
+          <div id="buttonsRow">
+            <button id="drawButton">Ziehung starten 💨</button>
+            <button id="resetButton">Neu mischen ♻️</button>
+            <button id="muteButton">🔊 Sound</button>
+          </div>
+          <div id="configRow">
+            <div class="configLine">
+              <label for="presetSelect"><strong>Vorlage:</strong></label>
+              <select id="presetSelect">
+                <option value="custom">Eigene Einstellungen</option>
+                <option value="euromillions">Euromillions (5 aus 50, 2 aus 12)</option>
+                <option value="eurojackpot">Eurojackpot (5 aus 50, 2 aus 12)</option>
+                <option value="swisslotto">Swiss Lotto (6 aus 42, 1 aus 6)</option>
+              </select>
+            </div>
+
+<div class="configLine">
+  <strong>Zahlen:</strong>
+  <input type="number" id="ball-drawtarget" min="0" max="200" value="5">
+  <span>aus</span>
+  <input type="number" id="ball-count" min="0" max="200" value="50">
+</div>
+
+<div class="configLine">
+  <strong>Zusatz:</strong>
+  <input type="number" id="star-drawtarget" min="0" max="200" value="2">
+  <span>aus</span>
+  <input type="number" id="star-count" min="0" max="200" value="12">
+  <select id="second-type">
+    <option value="star">Sterne (3D-Sterne)</option>
+    <option value="extra">Zusatzzahlen (Kugeln)</option>
+  </select>
+</div>
+
+            <div class="configLine">
+              <strong>Wirbelzeit:</strong>
+              <input type="number" id="mixTimeInput" min="1" max="60" value="5">
+              <span>s</span>
+            </div>
+
+            <!-- Farbauswahl -->
+            <div class="configLine">
+              <strong>Farben:</strong>
+              <span>Zahlen</span>
+<select id="ball-color">
+  <option value="white">weiß</option>
+  <option value="gold">gold</option>
+  <option value="yellow">gelb</option>
+  <option value="red">rot</option>
+  <option value="pastel" selected>Pastell (zufällig)</option>
+</select>
+              <span>Zusatz</span>
+<select id="star-color">
+  <option value="white">weiß</option>
+  <option value="gold">gold</option>
+  <option value="yellow">gelb</option>
+  <option value="red">rot</option>
+  <option value="pastel" selected>Pastell (zufällig)</option>
+</select>
+            </div>
+          </div>
+        </div>
+
+        <div id="results">
+          <div id="lastDrawn">Letzte Ziehung: <span>–</span></div>
+
+          <div class="resultRow" id="ballsRow">
+            <span class="resultRowLabel">Zahlen:</span>
+            <span id="output-balls">—</span>
+          </div>
+
+          <div class="resultRow" id="starsRow">
+            <span class="resultRowLabel" id="second-phase-label">Zusatz:</span>
+            <span id="output-stars">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <audio id="sound-air"     src="locked/wind.wav"    loop></audio>
+  <audio id="sound-ball"    src="locked/drop.wav"></audio>
+  <audio id="sound-fanfare" src="locked/fanfare.wav"></audio>
+  <audio id="sound-knock"   src="locked/knock.wav"></audio>
+
+  <script src="locked/script-3d.js"></script>
+</body>
+</html>
