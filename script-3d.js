@@ -25,6 +25,7 @@ const starColorSelect = document.getElementById('star-color');
 
 // Presets
 const presetSelect = document.getElementById('presetSelect');
+const blowerModeSelect = document.getElementById('blower-mode');
 
 // Audio
 const soundAir     = document.getElementById('sound-air');
@@ -47,8 +48,6 @@ const statsMainList = document.getElementById('statsMainList');
 const statsStarList = document.getElementById('statsStarList');
 
 // Statistik-Parameter
-let statDraw = false;
-
 // let euroDraws         = null;11:34 21.11.2025
 // let statsWeightsMain  = null;  // 1..50
 // let statsWeightsStars = null;  // 1..12
@@ -63,8 +62,6 @@ const metalMat = new THREE.MeshStandardMaterial({
 
 const muteButton = document.getElementById('muteButton');
 let soundMuted = false;
-
-
 
 function updateMuteState() {
   const audios = [soundAir, soundBall, soundFanfare, soundKnock];
@@ -471,7 +468,7 @@ function smoothstep(t) {
 async function loadEuromillionsDraws() {
   if (euroDraws) return euroDraws;
   try {
-    const res = await fetch('euromillions-draws.json');
+    const res = await fetch('locked/euromillions-draws.json');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     euroDraws = Array.isArray(data.draws) ? data.draws : [];
@@ -996,6 +993,207 @@ let focusPhase   = null; // 'move' | 'hold' | 'fade'
 let focusTimer   = 0;
 let pendingResult = null; // { number, isSecondPhase }
 
+// ===== Gebläse-Steuerung (Auto / Schütteln / Pusten) =====
+const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+let blowerMode = 'auto';           // 'auto' | 'shake' | 'blow'
+let lastShakeStrength = 0;         // Stärke des Schüttelns
+let micLevel = 0;                  // Lautstärke / „Pusten“ (0..~1)
+
+let micAudioCtx = null;
+let micAnalyser = null;
+let micSource = null;
+let micStream = null;
+let micLoopActive = false;
+
+let devicemotionListenerAdded = false;
+
+
+
+// ===== Gebläse-Hilfsfunktionen =====
+
+function canUseShake() {
+  // Schütteln nur auf mobilen Geräten, die DeviceMotion unterstützen
+  return isMobileDevice && typeof window !== 'undefined' && typeof window.DeviceMotionEvent !== 'undefined';
+}
+
+function canUseMic() {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+}
+
+function initBlowerModeOptions() {
+  if (!blowerModeSelect) return;
+
+  const optShake = blowerModeSelect.querySelector('option[value="shake"]');
+  const optBlow  = blowerModeSelect.querySelector('option[value="blow"]');
+
+  // Schütteln nur anbieten, wenn Sensor-Unterstützung
+  if (!canUseShake() && optShake) {
+    optShake.disabled = true;
+    optShake.textContent += ' (nicht verfügbar)';
+  }
+
+  // Pusten nur anbieten, wenn getUserMedia vorhanden
+  if (!canUseMic() && optBlow) {
+    optBlow.disabled = true;
+    optBlow.textContent += ' (nicht verfügbar)';
+  }
+}
+
+function handleBlowerModeChange(value) {
+  if (value === 'shake') {
+    if (!canUseShake()) {
+      alert('Schüttelmodus wird von diesem Gerät nicht unterstützt.');
+      if (blowerModeSelect) {
+        blowerModeSelect.value = 'auto';
+      }
+      blowerMode = 'auto';
+      return;
+    }
+    blowerMode = 'shake';
+    initShakeControl();
+  } else if (value === 'blow') {
+    if (!canUseMic()) {
+      alert('Pusten über Mikrofon wird von diesem Gerät/Browser nicht unterstützt.');
+      if (blowerModeSelect) {
+        blowerModeSelect.value = 'auto';
+      }
+      blowerMode = 'auto';
+      return;
+    }
+    blowerMode = 'blow';
+    initMic();
+  } else {
+    blowerMode = 'auto';
+  }
+}
+
+function initShakeControl() {
+  if (devicemotionListenerAdded || !canUseShake()) return;
+
+  function addListener() {
+    window.addEventListener('devicemotion', handleDeviceMotion);
+    devicemotionListenerAdded = true;
+  }
+
+  try {
+    if (typeof DeviceMotionEvent !== 'undefined' &&
+        typeof DeviceMotionEvent.requestPermission === 'function') {
+      // iOS: explizite Berechtigung nötig
+      DeviceMotionEvent.requestPermission()
+        .then(state => {
+          if (state === 'granted') {
+            addListener();
+          } else {
+            alert('Ohne Erlaubnis für Bewegungssensoren funktioniert der Schüttelmodus nicht.');
+            if (blowerModeSelect) {
+              blowerModeSelect.value = 'auto';
+            }
+            blowerMode = 'auto';
+          }
+        })
+        .catch(err => {
+          console.error('DeviceMotion permission error', err);
+          if (blowerModeSelect) {
+            blowerModeSelect.value = 'auto';
+          }
+          blowerMode = 'auto';
+        });
+    } else {
+      // Android / andere Browser
+      addListener();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function handleDeviceMotion(ev) {
+  if (!ev) return;
+  const acc = ev.accelerationIncludingGravity || ev.acceleration;
+  if (!acc) return;
+  const ax = acc.x || 0;
+  const ay = acc.y || 0;
+  const az = acc.z || 0;
+
+  const magnitude = Math.sqrt(ax*ax + ay*ay + az*az);
+  const strength = Math.max(0, magnitude - 9.81); // grob Gravitation abziehen
+
+  // Glätten / Dämpfen
+  lastShakeStrength = lastShakeStrength * 0.8 + strength * 0.2;
+}
+
+function initMic() {
+  if (!canUseMic()) return;
+
+  if (!micAudioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    micAudioCtx = new AC();
+  }
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      micStream = stream;
+      micSource = micAudioCtx.createMediaStreamSource(stream);
+      micAnalyser = micAudioCtx.createAnalyser();
+      micAnalyser.fftSize = 512;
+      micSource.connect(micAnalyser);
+
+      if (!micLoopActive) {
+        micLoopActive = true;
+        updateMicLevel();
+      }
+    })
+    .catch(err => {
+      console.error('getUserMedia error', err);
+      alert('Kein Zugriff auf das Mikrofon – Pusten-Modus deaktiviert.');
+      if (blowerModeSelect) {
+        blowerModeSelect.value = 'auto';
+      }
+      blowerMode = 'auto';
+    });
+}
+
+function updateMicLevel() {
+  if (!micAnalyser) {
+    micLoopActive = false;
+    return;
+  }
+
+  const buffer = new Uint8Array(micAnalyser.fftSize);
+  micAnalyser.getByteTimeDomainData(buffer);
+
+  let sum = 0;
+  for (let i = 0; i < buffer.length; i++) {
+    const v = (buffer[i] - 128) / 128; // -1..1
+    sum += v * v;
+  }
+  const rms = Math.sqrt(sum / buffer.length); // typ. 0 .. ~0.5
+  micLevel = micLevel * 0.8 + rms * 0.2;
+
+  if (blowerMode === 'blow' && micLoopActive) {
+    requestAnimationFrame(updateMicLevel);
+  } else {
+    micLoopActive = false;
+  }
+}
+
+function getJetStrengthMultiplier() {
+  let mult = 1;
+
+  if (blowerMode === 'shake') {
+    // lastShakeStrength ist im Ruhezustand ~0, beim Schütteln > 0
+    const extra = Math.min(lastShakeStrength / 5, 3); // bis +3
+    mult += extra;
+  } else if (blowerMode === 'blow') {
+    // micLevel typ. 0..0.5 → etwas verstärken
+    const extra = Math.min(micLevel * 8, 3); // bis +3
+    mult += extra;
+  }
+
+  return mult;
+}
+
 // ===== Statistik / STAT_WEIGHT (Euromillions) =====
 
 // Stärke der statistischen Gewichtung:
@@ -1466,7 +1664,7 @@ function applyAirJet(dt) {
     const f = Math.max(0, radialFactor * verticalFactor);
     if (f <= 0) continue;
 
-    const strength = JET_STRENGTH * f * pulse;
+    const strength = JET_STRENGTH * f * pulse * getJetStrengthMultiplier();
 
     b.vy -= strength * dt;
 
@@ -1601,7 +1799,7 @@ if (relVelAlongNormal < 0) {
   const IMPACT_THRESHOLD = 130; // nach Geschmack anpassen (80–200 testen)
 
   if (mode === 'airblast' && impactStrength > IMPACT_THRESHOLD) {
-    if (!isMobile) playKnock();)  // nutzt weiterhin deinen Cooldown
+    playKnock();  // nutzt weiterhin deinen Cooldown
   }
 
   const impulse = -(1 + BOUNCE) * relVelAlongNormal / 2;
@@ -1888,12 +2086,7 @@ if (t >= 1) {
 
         if (drawButton) {
           drawButton.disabled = false;
-          statButton.disabled = false;
-          if (statDraw === false) {
-            drawButton.textContent = 'Ziehung starten 💨';
-          } else {
-            statButton.textContent = 'Euromillions Statistik-Tipp 💨';
-          }
+          drawButton.textContent = 'Ziehung starten 💨';
         }
       } else {
         // Nächste Kugel: erst wieder wirbeln, dann ziehen
@@ -1930,13 +2123,7 @@ function startDrawSequence() {
 
   if (drawButton) {
     drawButton.disabled = true;
-    statButton.disabled = true;
-
-    if (statDraw === false) {
-      drawButton.textContent = 'Ziehung läuft…'; 
-    } else {
-      statButton.textContent = 'Ziehung läuft…'; 
-    }	
+    drawButton.textContent = 'Ziehung läuft…';
   }
   playSafe(soundAir);
 }
@@ -1962,7 +2149,6 @@ function resetAll() {
   pendingResult = null;
 
   isSecondPhase = false;
-  statDraw = false;
 
   // Statistikmodus zurücksetzen
   statModeActive     = false;
@@ -1973,12 +2159,7 @@ function resetAll() {
   initBalls(BALL_COUNT, true);
   if (drawButton) {
     drawButton.disabled = false;
-    statButton.disabled = false;
-    if (statDraw === false) {
-      drawButton.textContent = 'Ziehung starten 💨';
-    } else {
-      statButton.textContent = 'Euromillions Statistik-Tipp 💨';
-    }
+    drawButton.textContent = 'Ziehung starten 💨';
   }
 }
 
@@ -2110,6 +2291,8 @@ function animate(timestamp) {
   dt = Math.min(dt, 0.03);
   const dtSim = dt;
 
+  lastShakeStrength *= 0.98;
+
 // Trommel dreht nur beim Wirbeln / Ziehen, nicht im Fokus
 if (mode === 'airblast' || mode === 'drawing') {
   drumMesh.rotation.y += DRUM_ROT_SPEED * dtSim;
@@ -2161,6 +2344,11 @@ if (mode === 'drawing' || mode === 'focus') {
 }
 
 // ===== Events & Start =====
+if (blowerModeSelect) {
+  blowerModeSelect.addEventListener('change', (e) => {
+    handleBlowerModeChange(e.target.value);
+  });
+}
 if (drawButton) {
   drawButton.addEventListener('click', () => {
     if (mode !== 'idle') return;
@@ -2187,13 +2375,11 @@ if (statButton) {
     readInputs();
 
     statModeActive = true;
-    statDraw = true;
     await prepareStatPlannedNumbers();
 
     if (!statModeActive || !plannedMainNumbers || plannedMainNumbers.length === 0) {
       // Fallback: wenn Statistik nicht verfügbar, normale Ziehung
       statModeActive = false;
-      statDraw = false;
       startDrawSequence();
       return;
     }
@@ -2254,6 +2440,9 @@ if (presetSelect) {
 // 2) Custom-Preset anwenden (5 aus 50, 2 aus 12, Pastell)
 applyPresetCustom();
 
+// 2b) Gebläse-Optionen je nach Gerät (Schütteln/Pusten) anpassen
+initBlowerModeOptions();
+
 // 3) Hintergrund für Custom-Preset setzen (Gradient im canvas-bg)
 setCanvasBackgroundForPreset('custom');
 
@@ -2263,5 +2452,4 @@ updateUI();
 
 // 5) Animation starten
 requestAnimationFrame(animate);
-
 

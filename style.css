@@ -54,7 +54,7 @@ body {
 /* === NEUE BACKGROUND-LAYER (unscharfer Hintergrund) === */
 #canvas-area {
   position: relative;
-  width: 950px;   /* gleiche Größe wie dein Canvas */
+  width: 800px;   /* gleiche Größe wie dein Canvas */
   height: 500px;
   border-radius: 24px;
   overflow: hidden;  /* Hintergrund & Canvas werden sauber beschnitten */
@@ -161,7 +161,8 @@ input[type="number"]:focus {
 #secondTypeSelect,
 #second-type,
 #ball-color,
-#star-color {
+#star-color,
+#blower-mode {
   padding: 3px 6px;
   border-radius: 999px;
   border: 1px solid #ccd3ff;
@@ -174,7 +175,8 @@ input[type="number"]:focus {
 #secondTypeSelect:focus,
 #second-type:focus,
 #ball-color:focus,
-#star-color:focus {
+#star-color:focus,
+#blower-mode:focus {
   box-shadow: 0 0 0 2px rgba(123, 157, 255, 0.35);
   border-color: #7b9dff;
 }
@@ -369,7 +371,7 @@ input[type="number"]:focus {
 }
 
 #logo-frame {
-  width: 980px;          /* gleiche Breite wie das lotto-canvas */
+  width: 830px;          /* gleiche Breite wie das lotto-canvas */
   height: 130px;         /* exakt deine gewünschte Höhe */
   border-radius: 24px;
   overflow: hidden;

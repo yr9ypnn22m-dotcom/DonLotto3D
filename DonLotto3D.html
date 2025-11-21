@@ -15,14 +15,14 @@
 </div>    <div id="gameContainer">
      <div id="canvas-area">
       <div id="canvas-bg"></div>
-      <canvas id="lotto-canvas" width="950" height="500"></canvas>
+      <canvas id="lotto-canvas" width="800" height="500"></canvas>
      </div>
       <div id="ui">
         <div id="controlsLeft">
           <div id="buttonsRow">
             <button id="drawButton">Ziehung starten 💨</button>
-            <button id="statButton">Euromillions Statistik-Tipp 💨</button>
-            <button id="statsButton">Euromillions Statistik 📊</button>
+            <button id="statButton">Statistik-Tipp 📊</button>
+            <button id="statsButton">Statistik % anzeigen 📊</button>
             <button id="resetButton">Neu mischen ♻️</button>
             <button id="muteButton">🔊 Sound</button>
           </div>
@@ -59,6 +59,15 @@
               <strong>Wirbelzeit:</strong>
               <input type="number" id="mixTimeInput" min="1" max="60" value="5">
               <span>s</span>
+            </div>
+
+            <div class="configLine">
+              <strong>Gebläse:</strong>
+              <select id="blower-mode">
+                <option value="auto" selected>Automatisch</option>
+                <option value="shake">Schütteln</option>
+                <option value="blow">Pusten (Mikrofon)</option>
+              </select>
             </div>
 
             <!-- Farbauswahl -->
@@ -128,10 +137,10 @@
   </div>
 
   <!-- Audio -->
-  <audio id="sound-air"     src="wind.m4a"    loop></audio>
-  <audio id="sound-ball"    src="drop.m4a"></audio>
-  <audio id="sound-fanfare" src="fanfare.m4a"></audio>
-  <audio id="sound-knock"   src="knock.m4a"></audio>
+  <audio id="sound-air"     src="wind.wav"    loop></audio>
+  <audio id="sound-ball"    src="drop.wav"></audio>
+  <audio id="sound-fanfare" src="fanfare.wav"></audio>
+  <audio id="sound-knock"   src="knock.wav"></audio>
 
   <script src="script-3d.js"></script>
 </body>
