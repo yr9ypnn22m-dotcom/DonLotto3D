@@ -47,6 +47,8 @@ const statsMainList = document.getElementById('statsMainList');
 const statsStarList = document.getElementById('statsStarList');
 
 // Statistik-Parameter
+let statDraw = false;
+
 // let euroDraws         = null;11:34 21.11.2025
 // let statsWeightsMain  = null;  // 1..50
 // let statsWeightsStars = null;  // 1..12
@@ -61,6 +63,8 @@ const metalMat = new THREE.MeshStandardMaterial({
 
 const muteButton = document.getElementById('muteButton');
 let soundMuted = false;
+
+
 
 function updateMuteState() {
   const audios = [soundAir, soundBall, soundFanfare, soundKnock];
@@ -1884,7 +1888,12 @@ if (t >= 1) {
 
         if (drawButton) {
           drawButton.disabled = false;
-          drawButton.textContent = 'Ziehung starten 💨';
+          statButton.disabled = false;
+          if (statDraw === false) {
+            drawButton.textContent = 'Ziehung starten 💨';
+          } else {
+            statButton.textContent = 'Euromillions Statistik-Tipp 💨';
+          }
         }
       } else {
         // Nächste Kugel: erst wieder wirbeln, dann ziehen
@@ -1921,7 +1930,13 @@ function startDrawSequence() {
 
   if (drawButton) {
     drawButton.disabled = true;
-    drawButton.textContent = 'Ziehung läuft…';
+    statButton.disabled = true;
+
+    if (statDraw === false) {
+      drawButton.textContent = 'Ziehung läuft…'; 
+    } else {
+      statButton.textContent = 'Ziehung läuft…'; 
+    }	
   }
   playSafe(soundAir);
 }
@@ -1947,6 +1962,7 @@ function resetAll() {
   pendingResult = null;
 
   isSecondPhase = false;
+  statDraw = false;
 
   // Statistikmodus zurücksetzen
   statModeActive     = false;
@@ -1957,7 +1973,12 @@ function resetAll() {
   initBalls(BALL_COUNT, true);
   if (drawButton) {
     drawButton.disabled = false;
-    drawButton.textContent = 'Ziehung starten 💨';
+    statButton.disabled = false;
+    if (statDraw === false) {
+      drawButton.textContent = 'Ziehung starten 💨';
+    } else {
+      statButton.textContent = 'Euromillions Statistik-Tipp 💨';
+    }
   }
 }
 
@@ -2166,11 +2187,13 @@ if (statButton) {
     readInputs();
 
     statModeActive = true;
+    statDraw = true;
     await prepareStatPlannedNumbers();
 
     if (!statModeActive || !plannedMainNumbers || plannedMainNumbers.length === 0) {
       // Fallback: wenn Statistik nicht verfügbar, normale Ziehung
       statModeActive = false;
+      statDraw = false;
       startDrawSequence();
       return;
     }

@@ -54,7 +54,7 @@ body {
 /* === NEUE BACKGROUND-LAYER (unscharfer Hintergrund) === */
 #canvas-area {
   position: relative;
-  width: 800px;   /* gleiche Größe wie dein Canvas */
+  width: 950px;   /* gleiche Größe wie dein Canvas */
   height: 500px;
   border-radius: 24px;
   overflow: hidden;  /* Hintergrund & Canvas werden sauber beschnitten */
@@ -369,7 +369,7 @@ input[type="number"]:focus {
 }
 
 #logo-frame {
-  width: 830px;          /* gleiche Breite wie das lotto-canvas */
+  width: 980px;          /* gleiche Breite wie das lotto-canvas */
   height: 130px;         /* exakt deine gewünschte Höhe */
   border-radius: 24px;
   overflow: hidden;
