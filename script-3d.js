@@ -1167,7 +1167,7 @@ function updateMicLevel() {
     sum += v * v;
   }
   const rms = Math.sqrt(sum / buffer.length); // typ. 0 .. ~0.5
-  micLevel = micLevel * 0.8 + rms * 0.2;
+  micLevel = micLevel * 0.6 + rms * 0.2;
 
   if (blowerMode === 'blow' && micLoopActive) {
     requestAnimationFrame(updateMicLevel);
@@ -1179,11 +1179,20 @@ function updateMicLevel() {
 function getJetStrengthMultiplier() {
   // PUSTEN-MODUS: Luftstärke hängt ausschließlich vom Mikro ab
   if (blowerMode === 'blow') {
-    // kleiner Schwellwert: Umgebungsrauschen ignorieren
-    if (micLevel < 0.05) {
-      return 0; // kein Wind, wenn wirklich nichts passiert
+    // Rauschen (Lüfter, Raum) knapp unter 0.02 meistens.
+    if (micLevel < 0.02) {
+      return 0; // komplett still, wenn wirklich nichts los ist
     }
-    const extra = Math.min(micLevel * 8, 3); // etwa 0..3
+
+    // Offset abziehen, dann stark verstärken
+    const base = Math.max(0, micLevel - 0.02);
+
+    // Hier stellst du die Empfindlichkeit ein:
+    //  - 35 = sehr empfindlich (iPhone)
+    //  - 20 = mittel
+    //  - 10 = eher sanft
+    const extra = Math.min(base * 30, 5); // max 5-fache Stärke
+
     return extra;
   }
 
@@ -1191,14 +1200,12 @@ function getJetStrengthMultiplier() {
   let mult = 1;
 
   if (blowerMode === 'shake') {
-    // lastShakeStrength ist im Ruhezustand ~0, beim Schütteln > 0
-    const extra = Math.min(lastShakeStrength / 5, 3); // bis +3
+    const extra = Math.min(lastShakeStrength / 5, 3);
     mult += extra;
   }
 
   return mult;
 }
-
 
 // ===== Statistik / STAT_WEIGHT (Euromillions) =====
 
