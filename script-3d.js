@@ -1601,7 +1601,7 @@ if (relVelAlongNormal < 0) {
   const IMPACT_THRESHOLD = 130; // nach Geschmack anpassen (80–200 testen)
 
   if (mode === 'airblast' && impactStrength > IMPACT_THRESHOLD) {
-    playKnock();  // nutzt weiterhin deinen Cooldown
+    if (!isMobile) playKnock();)  // nutzt weiterhin deinen Cooldown
   }
 
   const impulse = -(1 + BOUNCE) * relVelAlongNormal / 2;
@@ -2263,4 +2263,5 @@ updateUI();
 
 // 5) Animation starten
 requestAnimationFrame(animate);
+
 
