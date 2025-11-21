@@ -1027,16 +1027,14 @@ function initBlowerModeOptions() {
   const optShake = blowerModeSelect.querySelector('option[value="shake"]');
   const optBlow  = blowerModeSelect.querySelector('option[value="blow"]');
 
-  // Schütteln nur anbieten, wenn Sensor-Unterstützung
-  if (!canUseShake() && optShake) {
-    optShake.disabled = true;
-    optShake.textContent += ' (nicht verfügbar)';
+  // Wir lassen beide Optionen grundsätzlich auswählbar.
+  // In handleBlowerModeChange wird dann geprüft, ob das Gerät/der Browser sie wirklich unterstützt.
+  // Optional können wir Hinweise im title setzen:
+  if (optShake && !canUseShake()) {
+    optShake.title = 'Schütteln wird von diesem Gerät/Browser eventuell nicht unterstützt.';
   }
-
-  // Pusten nur anbieten, wenn getUserMedia vorhanden
-  if (!canUseMic() && optBlow) {
-    optBlow.disabled = true;
-    optBlow.textContent += ' (nicht verfügbar)';
+  if (optBlow && !canUseMic()) {
+    optBlow.title = 'Pusten (Mikrofon) wird von diesem Gerät/Browser eventuell nicht unterstützt oder benötigt HTTPS.';
   }
 }
 
@@ -1146,7 +1144,7 @@ function initMic() {
     })
     .catch(err => {
       console.error('getUserMedia error', err);
-      alert('Kein Zugriff auf das Mikrofon – Pusten-Modus deaktiviert.');
+      alert('Kein Zugriff auf das Mikrofon – Pusten-Modus deaktiviert.\nHinweis: Auf vielen Browsern funktioniert das nur über HTTPS oder localhost und nach expliziter Freigabe.');
       if (blowerModeSelect) {
         blowerModeSelect.value = 'auto';
       }
