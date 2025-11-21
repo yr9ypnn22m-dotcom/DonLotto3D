@@ -1038,21 +1038,17 @@ function initBlowerModeOptions() {
   }
 }
 
+
 function handleBlowerModeChange(value) {
   if (value === 'shake') {
-    if (!canUseShake()) {
-      alert('Schüttelmodus wird von diesem Gerät nicht unterstützt.');
-      if (blowerModeSelect) {
-        blowerModeSelect.value = 'auto';
-      }
-      blowerMode = 'auto';
-      return;
-    }
+    // Schüttelmodus aktivieren; wir versuchen, die Sensoren zu initialisieren.
+    // Falls das Gerät es doch nicht unterstützt oder iOS keine Erlaubnis gibt,
+    // bleibt der Modus ausgewählt, nur die Wirkung bleibt aus.
     blowerMode = 'shake';
     initShakeControl();
   } else if (value === 'blow') {
     if (!canUseMic()) {
-      alert('Pusten über Mikrofon wird von diesem Gerät/Browser nicht unterstützt.');
+      alert('Pusten über Mikrofon wird von diesem Gerät/Browser nicht unterstützt oder benötigt HTTPS/localhost.');
       if (blowerModeSelect) {
         blowerModeSelect.value = 'auto';
       }
@@ -1065,6 +1061,7 @@ function handleBlowerModeChange(value) {
     blowerMode = 'auto';
   }
 }
+
 
 function initShakeControl() {
   if (devicemotionListenerAdded || !canUseShake()) return;
@@ -1167,7 +1164,7 @@ function updateMicLevel() {
     sum += v * v;
   }
   const rms = Math.sqrt(sum / buffer.length); // typ. 0 .. ~0.5
-  micLevel = micLevel * 0.6 + rms * 0.2;
+  micLevel = micLevel * 0.5 + rms * 0.5;
 
   if (blowerMode === 'blow' && micLoopActive) {
     requestAnimationFrame(updateMicLevel);
@@ -1176,6 +1173,7 @@ function updateMicLevel() {
   }
 }
 
+
 function getJetStrengthMultiplier() {
   // PUSTEN-MODUS: Luftstärke hängt ausschließlich vom Mikro ab
   if (blowerMode === 'blow') {
@@ -1183,29 +1181,33 @@ function getJetStrengthMultiplier() {
     if (micLevel < 0.02) {
       return 0; // komplett still, wenn wirklich nichts los ist
     }
-
-    // Offset abziehen, dann stark verstärken
     const base = Math.max(0, micLevel - 0.02);
 
-    // Hier stellst du die Empfindlichkeit ein:
-    //  - 35 = sehr empfindlich (iPhone)
-    //  - 20 = mittel
-    //  - 10 = eher sanft
-    const extra = Math.min(base * 30, 5); // max 5-fache Stärke
-
+    // Empfindlichkeit:
+    //  - Faktor 35: recht empfindlich (gut für iPhone)
+    //  - Max 5: nicht völlig überdrehen
+    const extra = Math.min(base * 35, 5);
     return extra;
   }
 
-  // STANDARD / SCHÜTTELN: Basis 1, plus Verstärkung
-  let mult = 1;
-
+  // SCHÜTTEL-MODUS: Nur Wind, wenn wirklich geschüttelt wird
   if (blowerMode === 'shake') {
-    const extra = Math.min(lastShakeStrength / 5, 3);
-    mult += extra;
+    const threshold = 2.0; // Mindest-Schüttelstärke, nach Gefühl anpassen
+
+    // Wenn das Gerät praktisch still gehalten wird: kein Gebläse
+    if (lastShakeStrength < threshold) {
+      return 0;
+    }
+
+    const base = lastShakeStrength - threshold;
+    const extra = Math.min(base / 3, 4); // max. 4-fache Stärke
+    return extra;
   }
 
-  return mult;
+  // AUTO-MODUS: normale Grundstärke
+  return 1;
 }
+
 
 // ===== Statistik / STAT_WEIGHT (Euromillions) =====
 
