@@ -1177,20 +1177,28 @@ function updateMicLevel() {
 }
 
 function getJetStrengthMultiplier() {
+  // PUSTEN-MODUS: Luftstärke hängt ausschließlich vom Mikro ab
+  if (blowerMode === 'blow') {
+    // kleiner Schwellwert: Umgebungsrauschen ignorieren
+    if (micLevel < 0.05) {
+      return 0; // kein Wind, wenn wirklich nichts passiert
+    }
+    const extra = Math.min(micLevel * 8, 3); // etwa 0..3
+    return extra;
+  }
+
+  // STANDARD / SCHÜTTELN: Basis 1, plus Verstärkung
   let mult = 1;
 
   if (blowerMode === 'shake') {
     // lastShakeStrength ist im Ruhezustand ~0, beim Schütteln > 0
     const extra = Math.min(lastShakeStrength / 5, 3); // bis +3
     mult += extra;
-  } else if (blowerMode === 'blow') {
-    // micLevel typ. 0..0.5 → etwas verstärken
-    const extra = Math.min(micLevel * 8, 3); // bis +3
-    mult += extra;
   }
 
   return mult;
 }
+
 
 // ===== Statistik / STAT_WEIGHT (Euromillions) =====
 
