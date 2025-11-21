@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>DonLotto 3D</title>
-  <link rel="stylesheet" href="locked/style.css">
+  <link rel="stylesheet" href="style.css">
 
   <!-- Three.js einbinden -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
@@ -11,7 +11,7 @@
 <body>
   <div id="wrapper">
 <div id="logo-frame">
-    <img id="logo-img" src="locked/logo.png" alt="DonLotto3D Logo">
+    <img id="logo-img" src="logo.png" alt="DonLotto3D Logo">
 </div>    <div id="gameContainer">
      <div id="canvas-area">
       <div id="canvas-bg"></div>
@@ -21,6 +21,8 @@
         <div id="controlsLeft">
           <div id="buttonsRow">
             <button id="drawButton">Ziehung starten 💨</button>
+            <button id="statButton">Statistik-Tipp 📊</button>
+            <button id="statsButton">Statistik % anzeigen 📊</button>
             <button id="resetButton">Neu mischen ♻️</button>
             <button id="muteButton">🔊 Sound</button>
           </div>
@@ -99,12 +101,38 @@
     </div>
   </div>
 
-  <!-- Audio -->
-  <audio id="sound-air"     src="locked/wind.wav"    loop></audio>
-  <audio id="sound-ball"    src="locked/drop.wav"></audio>
-  <audio id="sound-fanfare" src="locked/fanfare.wav"></audio>
-  <audio id="sound-knock"   src="locked/knock.wav"></audio>
+  <!-- Statistik-Popup -->
+  <div id="statsOverlay" class="modalOverlay hidden">
+    <div id="statsModal" class="modal">
+      <div class="modalHeader">
+        <h2>Statistik-Gewichtung (Euromillions)</h2>
+        <button id="statsClose" class="modalClose" aria-label="Popup schließen">×</button>
+      </div>
+      <div class="modalBody">
+        <p class="modalHint">
+          Prozentuale Gewichtung basierend auf Häufigkeit &amp; Überfälligkeit (Delay),
+          mit STAT_WEIGHT = 0.35. Werte sind relativ &amp; normiert.
+        </p>
+        <div class="statsColumns">
+          <div class="statsColumn">
+            <h3>Hauptzahlen</h3>
+            <div id="statsMainList" class="statsList"></div>
+          </div>
+          <div class="statsColumn">
+            <h3>Sterne</h3>
+            <div id="statsStarList" class="statsList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <script src="locked/script-3d.js"></script>
+  <!-- Audio -->
+  <audio id="sound-air"     src="wind.wav"    loop></audio>
+  <audio id="sound-ball"    src="drop.wav"></audio>
+  <audio id="sound-fanfare" src="fanfare.wav"></audio>
+  <audio id="sound-knock"   src="knock.wav"></audio>
+
+  <script src="script-3d.js"></script>
 </body>
 </html>
