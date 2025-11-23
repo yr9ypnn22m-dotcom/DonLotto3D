@@ -119,7 +119,14 @@ const scene = new THREE.Scene();
 scene.background = null;
 
 const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-camera.position.set(0, 4, 12);
+
+// feste Basis-Richtung (leicht von oben)
+const CAMERA_DIR = new THREE.Vector3(0, 4, 12).normalize();
+const CAMERA_BASE_FOV = 45;
+
+// Startposition – wird gleich von fitDrumInView() angepasst
+camera.position.copy(CAMERA_DIR.clone().multiplyScalar(12));
+camera.fov = CAMERA_BASE_FOV;
 camera.lookAt(0, 0, 0);
 
 function applyCameraLayout() {
@@ -166,20 +173,18 @@ function resizeRendererToDisplaySize() {
 
   const width  = canvas.clientWidth  || canvas.width;
   const height = canvas.clientHeight || canvas.height || 1;
-
   if (!width || !height) return;
 
   const needResize = canvas.width !== width || canvas.height !== height;
 
   if (needResize) {
     renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
   }
 
-  // HIER: je nach Ausrichtung die passende Kamera-Einstellung
-  applyCameraLayout();
+  // danach Kamera an neue Größe anpassen + zoomen
+  fitDrumInView();
 }
+
 
 // einmal beim Start
 resizeRendererToDisplaySize();
@@ -275,38 +280,39 @@ const ROT_OMEGA = { x: 0.2, y: 0.1, z: 0.05 };
 const ROT_FORCE_SCALE = 15;
 const DRUM_ROT_SPEED  = 0.2;
 // ===== Trommel immer vollständig im Sichtfeld halten =====
+// ===== Trommel an die verfügbare Breite anpassen =====
 function fitDrumInView() {
   if (!camera || !canvas) return;
 
-  const width  = canvas.clientWidth;
-  const height = canvas.clientHeight || 1;
+  const width  = canvas.clientWidth  || canvas.width;
+  const height = canvas.clientHeight || canvas.height || 1;
+  if (!width || !height) return;
 
-  const aspect = width / height;
+  // Seitenverhältnis aktualisieren
+  camera.aspect = width / height;
+  camera.fov = CAMERA_BASE_FOV;
+  camera.updateProjectionMatrix();
 
-  const radius = DRUM_RADIUS_WORLD;
+  const radius = DRUM_RADIUS_WORLD;   // Kugel-Radius in Weltkoordinaten
+  const targetFill = 0.95;            // 95% der Breite ausfüllen
 
-  // Ziel: Kugel nutzt ~95% der Breite
-  const targetFill = 0.95;
-
-  // Kamerawinkel in Radiant
+  // FOV in Radiant
   const fov  = camera.fov * Math.PI / 180;
   const tanH = Math.tan(fov / 2);
 
-  // Abstand für horizontales Einpassen
-  const distHoriz = (radius / (tanH * aspect)) / targetFill;
+  // Abstand, damit die Kugel horizontal 95% der Breite nutzt
+  const distHoriz = (radius / (tanH * camera.aspect)) / targetFill;
 
-  // Abstand für vertikale Sicherheit (damit oben/unten nicht abgeschnitten)
-  const distVert = radius / (tanH * 0.95);
+  // ein bisschen Sicherheitsreserve für oben/unten
+  const distVert  = radius / (tanH * 0.9);
 
-  // Passe horizontal ein → breite Darstellung
-  let needed = Math.max(distHoriz, distVert * 0.7);
+  const dist = Math.max(distHoriz, distVert * 0.7);
 
-  // Kamerarichtung beibehalten
-  const dir = camera.position.clone().normalize();
-  camera.position.copy(dir.multiplyScalar(needed));
+  // Kamera-Position aus fester Richtung + neuem Abstand
+  camera.position.copy(CAMERA_DIR.clone().multiplyScalar(dist));
 
-  // Leicht nach unten sehen → Sockel sichtbar
-  camera.lookAt(0, -0.5, 0);
+  // leicht nach unten schauen, damit Sockel nicht abgeschnitten wird
+  camera.lookAt(0, -0.3, 0);
 }
 
 
