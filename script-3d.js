@@ -110,6 +110,48 @@ if (!canvas || typeof THREE === 'undefined') {
   console.error('Fehlendes <canvas> oder Three.js – 3D-Version kann nicht starten.');
 }
 
+// ===== Physik-Konstanten =====
+const SPHERE_RADIUS = 190;
+const BALL_RADIUS   = 18;
+
+const DRUM_RADIUS_WORLD  = 4.0;
+const WORLD_SCALE        = DRUM_RADIUS_WORLD / SPHERE_RADIUS;
+const BALL_RADIUS_WORLD  = BALL_RADIUS * WORLD_SCALE;
+
+// Fokus-Animation: gezoomte Kugel in der Mitte
+const FOCUS_SCALE         = (0.95 * DRUM_RADIUS_WORLD) / BALL_RADIUS_WORLD;
+const FOCUS_MOVE_DURATION = 0.8; // Sekunden: von Auswurf zur Mitte
+const FOCUS_HOLD_DURATION = 2.0; // Sekunden: in der Mitte stehen
+const FOCUS_FADE_DURATION = 0.5; // Sekunden: ausblenden
+
+// Zielpose der Kugel/Stern im Fokus:
+// - leicht nach hinten gekippt, damit die Zahl "nach oben" zeigt
+// - nach vorne ausgerichtet (Zahl zeigt Richtung Kamera)
+const FOCUS_FINAL_ROT_X = -0.35;  // mehr oder weniger Neigung: -0.2 bis -0.5
+const FOCUS_FINAL_ROT_Y = -0.18;   // Zahl nach vorne
+const FOCUS_FINAL_ROT_Z =  0.0;
+
+// Drehrichtung: 1 = eine Umdrehung in bisheriger Richtung,
+// -1 = genau in die andere Richtung
+const FOCUS_ROT_DIRECTION = -1;
+
+const DAMPING       = 0.975;
+const BOUNCE        = 0.95;
+const MAX_SPEED     = 700;
+const GRAVITY       = 800;
+const OUTWARD_FORCE = 130;
+const GENTLE_FORCE  = 12;
+
+const SPIN_FACTOR   = 0.010;
+
+const JET_STRENGTH  = 145000;
+const JET_RADIUS    = 120;
+const JET_HEIGHT    = 150;
+
+const ROT_OMEGA = { x: 0.2, y: 0.1, z: 0.05 };
+const ROT_FORCE_SCALE = 15;
+const DRUM_ROT_SPEED  = 0.2;
+
 // ===== Three.js Grundsetup =====
 const W = canvas.width;
 const H = canvas.height;
@@ -253,47 +295,6 @@ const fakeEnv = new THREE.CubeTextureLoader().load([
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAn0B6dLJXc8AAAAASUVORK5CYII='
 ]);
 
-// ===== Physik-Konstanten =====
-const SPHERE_RADIUS = 190;
-const BALL_RADIUS   = 18;
-
-const DRUM_RADIUS_WORLD  = 4.0;
-const WORLD_SCALE        = DRUM_RADIUS_WORLD / SPHERE_RADIUS;
-const BALL_RADIUS_WORLD  = BALL_RADIUS * WORLD_SCALE;
-
-// Fokus-Animation: gezoomte Kugel in der Mitte
-const FOCUS_SCALE         = (0.95 * DRUM_RADIUS_WORLD) / BALL_RADIUS_WORLD;
-const FOCUS_MOVE_DURATION = 0.8; // Sekunden: von Auswurf zur Mitte
-const FOCUS_HOLD_DURATION = 2.0; // Sekunden: in der Mitte stehen
-const FOCUS_FADE_DURATION = 0.5; // Sekunden: ausblenden
-
-// Zielpose der Kugel/Stern im Fokus:
-// - leicht nach hinten gekippt, damit die Zahl "nach oben" zeigt
-// - nach vorne ausgerichtet (Zahl zeigt Richtung Kamera)
-const FOCUS_FINAL_ROT_X = -0.35;  // mehr oder weniger Neigung: -0.2 bis -0.5
-const FOCUS_FINAL_ROT_Y = -0.18;   // Zahl nach vorne
-const FOCUS_FINAL_ROT_Z =  0.0;
-
-// Drehrichtung: 1 = eine Umdrehung in bisheriger Richtung,
-// -1 = genau in die andere Richtung
-const FOCUS_ROT_DIRECTION = -1;
-
-const DAMPING       = 0.975;
-const BOUNCE        = 0.95;
-const MAX_SPEED     = 700;
-const GRAVITY       = 800;
-const OUTWARD_FORCE = 130;
-const GENTLE_FORCE  = 12;
-
-const SPIN_FACTOR   = 0.010;
-
-const JET_STRENGTH  = 145000;
-const JET_RADIUS    = 120;
-const JET_HEIGHT    = 150;
-
-const ROT_OMEGA = { x: 0.2, y: 0.1, z: 0.05 };
-const ROT_FORCE_SCALE = 15;
-const DRUM_ROT_SPEED  = 0.2;
 
 // Zieh-Einstellungen
 let BALL_COUNT      = 50;
