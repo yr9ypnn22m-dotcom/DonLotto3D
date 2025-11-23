@@ -304,10 +304,11 @@ function fitDrumInView() {
   // Abstand, damit die Kugel horizontal 95% der Breite nutzt
   const distHoriz = (radius / (tanH * camera.aspect)) / targetFill;
 
-  // ein bisschen Sicherheitsreserve für oben/unten
-  const distVert  = radius / (tanH * 0.9);
+  // Abstand, damit oben/unten sicher alles drin ist (10–15 % Reserve)
+  const distVert  = radius / (tanH * 0.80);   // etwas mehr Luft als 0.9
 
-  const dist = Math.max(distHoriz, distVert * 0.7);
+  // Wichtig: vertikale Anforderung NICHT runterskalieren
+  const dist = Math.max(distHoriz, distVert);
 
   // Kamera-Position aus fester Richtung + neuem Abstand
   camera.position.copy(CAMERA_DIR.clone().multiplyScalar(dist));
