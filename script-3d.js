@@ -122,6 +122,30 @@ const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
 camera.position.set(0, 4, 12);
 camera.lookAt(0, 0, 0);
 
+function applyCameraLayout() {
+  if (!camera || !canvas) return;
+
+  const portrait = window.innerHeight > window.innerWidth;
+
+  if (portrait) {
+    // H O C H F O R M A T:
+    // - etwas höher
+    // - etwas näher dran
+    // - leicht nach unten schauen → Sockel + unten gut zu sehen
+    camera.position.set(0, 5.5, 9);
+    camera.fov = 52;
+    camera.updateProjectionMatrix();
+    camera.lookAt(0, -0.6, 0);
+  } else {
+    // Q U E R F O R M A T / Desktop – dein bisheriges Layout
+    camera.position.set(0, 4, 12);
+    camera.fov = 45;
+    camera.updateProjectionMatrix();
+    camera.lookAt(0, 0, 0);
+  }
+}
+
+
 const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: true,
@@ -140,8 +164,8 @@ renderer.setClearColor(0x000000, 0);
 function resizeRendererToDisplaySize() {
   if (!canvas || !renderer || !camera) return;
 
-  const width  = canvas.clientWidth;
-  const height = canvas.clientHeight;
+  const width  = canvas.clientWidth  || canvas.width;
+  const height = canvas.clientHeight || canvas.height || 1;
 
   if (!width || !height) return;
 
@@ -151,15 +175,16 @@ function resizeRendererToDisplaySize() {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-
-    // Falls fitDrumInView später definiert ist: Kamera nachziehen
-    if (typeof fitDrumInView === 'function') {
-      fitDrumInView();
-    }
   }
+
+  // HIER: je nach Ausrichtung die passende Kamera-Einstellung
+  applyCameraLayout();
 }
 
-// auf Fenster- / Orientierungswechsel reagieren
+// einmal beim Start
+resizeRendererToDisplaySize();
+
+// auf Fenster-/Orientierungswechsel reagieren
 window.addEventListener('resize', resizeRendererToDisplaySize);
 window.addEventListener('orientationchange', () => {
   setTimeout(resizeRendererToDisplaySize, 250);
