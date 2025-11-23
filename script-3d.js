@@ -110,48 +110,6 @@ if (!canvas || typeof THREE === 'undefined') {
   console.error('Fehlendes <canvas> oder Three.js – 3D-Version kann nicht starten.');
 }
 
-// ===== Physik-Konstanten =====
-const SPHERE_RADIUS = 190;
-const BALL_RADIUS   = 18;
-
-const DRUM_RADIUS_WORLD  = 4.0;
-const WORLD_SCALE        = DRUM_RADIUS_WORLD / SPHERE_RADIUS;
-const BALL_RADIUS_WORLD  = BALL_RADIUS * WORLD_SCALE;
-
-// Fokus-Animation: gezoomte Kugel in der Mitte
-const FOCUS_SCALE         = (0.95 * DRUM_RADIUS_WORLD) / BALL_RADIUS_WORLD;
-const FOCUS_MOVE_DURATION = 0.8; // Sekunden: von Auswurf zur Mitte
-const FOCUS_HOLD_DURATION = 2.0; // Sekunden: in der Mitte stehen
-const FOCUS_FADE_DURATION = 0.5; // Sekunden: ausblenden
-
-// Zielpose der Kugel/Stern im Fokus:
-// - leicht nach hinten gekippt, damit die Zahl "nach oben" zeigt
-// - nach vorne ausgerichtet (Zahl zeigt Richtung Kamera)
-const FOCUS_FINAL_ROT_X = -0.35;  // mehr oder weniger Neigung: -0.2 bis -0.5
-const FOCUS_FINAL_ROT_Y = -0.18;   // Zahl nach vorne
-const FOCUS_FINAL_ROT_Z =  0.0;
-
-// Drehrichtung: 1 = eine Umdrehung in bisheriger Richtung,
-// -1 = genau in die andere Richtung
-const FOCUS_ROT_DIRECTION = -1;
-
-const DAMPING       = 0.975;
-const BOUNCE        = 0.95;
-const MAX_SPEED     = 700;
-const GRAVITY       = 800;
-const OUTWARD_FORCE = 130;
-const GENTLE_FORCE  = 12;
-
-const SPIN_FACTOR   = 0.010;
-
-const JET_STRENGTH  = 145000;
-const JET_RADIUS    = 120;
-const JET_HEIGHT    = 150;
-
-const ROT_OMEGA = { x: 0.2, y: 0.1, z: 0.05 };
-const ROT_FORCE_SCALE = 15;
-const DRUM_ROT_SPEED  = 0.2;
-
 // ===== Three.js Grundsetup =====
 const W = canvas.width;
 const H = canvas.height;
@@ -171,95 +129,11 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(W, H);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-// === Responsive Canvas-Größe (Desktop & Mobile) ===
-function resizeRendererToDisplaySize() {
-  if (!canvas || !renderer || !camera) return;
-
-  const width  = canvas.clientWidth;
-  const height = canvas.clientHeight;
-
-  if (!width || !height) return;
-
-  const needResize = canvas.width !== width || canvas.height !== height;
-
-  if (needResize) {
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-
-    // Trommel automatisch vollständig sichtbar machen
-    fitDrumInView();
-  }
-}
-
-// einmal beim Start ausführen
-resizeRendererToDisplaySize();
-
-fitDrumInView();
-
-// auf Fenster- / Orientierungswechsel reagieren
-window.addEventListener('resize', resizeRendererToDisplaySize);
-window.addEventListener('orientationchange', () => {
-  // kleines Delay, bis der Browser die neue Größe berechnet hat
-  setTimeout(resizeRendererToDisplaySize, 250);
-});
-
 renderer.outputEncoding = THREE.sRGBEncoding;
 
 
 // Nichts deckend löschen → komplett transparent
 renderer.setClearColor(0x000000, 0);
-
-// ===== Trommel immer vollständig im Sichtfeld halten =====
-// ===== Trommel immer vollständig im Sichtfeld halten =====
-function fitDrumInView() {
-  if (!camera || !canvas) return;
-
-  // Trommelradius + kleiner Rand
-  const radius = DRUM_RADIUS_WORLD * 1.05;
-
-  // Kamera-FOV in Radiant
-  const fov  = camera.fov * Math.PI / 180;
-  const tanH = Math.tan(fov / 2);
-
-  // aktuelle Canvasgröße
-  const width  = canvas.clientWidth  || canvas.width;
-  const height = canvas.clientHeight || canvas.height || 1;
-  const aspect = width / height;
-
-  // Abstand, der nötig ist, um die Trommel vertikal zu zeigen
-  const distVert  = radius / tanH;
-
-  // Abstand, der nötig wäre, um sie horizontal komplett zu zeigen
-  const distHoriz = radius / (tanH * aspect);
-
-  // „hoher“ Screen = Hochformat / sehr schmal
-  const tallScreen = aspect < 0.8;
-
-  // Desktop / Querformat: volle Sicht in beide Richtungen
-  // Hochformat: mehr Zoom, damit links/rechts kaum Rand bleibt
-  const needed = tallScreen ? distVert : Math.max(distVert, distHoriz);
-
-  // aktuelle Kamerarichtung beibehalten
-  const curPos    = camera.position.clone();
-  const dir       = curPos.clone().normalize();
-  const curDist   = curPos.length();
-  const targetDist = Math.max(curDist, needed);
-
-  camera.position.copy(dir.multiplyScalar(targetDist));
-
-  if (tallScreen) {
-    // im Hochformat den Blickpunkt etwas nach unten verschieben,
-    // damit der untere Teil der Trommel / Sockel besser im Bild ist
-    camera.lookAt(0, -0.8, 0);
-  } else {
-    // Desktop / Querformat wie gehabt
-    camera.lookAt(0, 0, 0);
-  }
-}
-
-
 
 // ===== Licht – frisches Studio-Setup =====
 // etwas wärmer & heller
@@ -304,6 +178,47 @@ const fakeEnv = new THREE.CubeTextureLoader().load([
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAn0B6dLJXc8AAAAASUVORK5CYII='
 ]);
 
+// ===== Physik-Konstanten =====
+const SPHERE_RADIUS = 190;
+const BALL_RADIUS   = 18;
+
+const DRUM_RADIUS_WORLD  = 4.0;
+const WORLD_SCALE        = DRUM_RADIUS_WORLD / SPHERE_RADIUS;
+const BALL_RADIUS_WORLD  = BALL_RADIUS * WORLD_SCALE;
+
+// Fokus-Animation: gezoomte Kugel in der Mitte
+const FOCUS_SCALE         = (0.95 * DRUM_RADIUS_WORLD) / BALL_RADIUS_WORLD;
+const FOCUS_MOVE_DURATION = 0.8; // Sekunden: von Auswurf zur Mitte
+const FOCUS_HOLD_DURATION = 2.0; // Sekunden: in der Mitte stehen
+const FOCUS_FADE_DURATION = 0.5; // Sekunden: ausblenden
+
+// Zielpose der Kugel/Stern im Fokus:
+// - leicht nach hinten gekippt, damit die Zahl "nach oben" zeigt
+// - nach vorne ausgerichtet (Zahl zeigt Richtung Kamera)
+const FOCUS_FINAL_ROT_X = -0.35;  // mehr oder weniger Neigung: -0.2 bis -0.5
+const FOCUS_FINAL_ROT_Y = -0.18;   // Zahl nach vorne
+const FOCUS_FINAL_ROT_Z =  0.0;
+
+// Drehrichtung: 1 = eine Umdrehung in bisheriger Richtung,
+// -1 = genau in die andere Richtung
+const FOCUS_ROT_DIRECTION = -1;
+
+const DAMPING       = 0.975;
+const BOUNCE        = 0.95;
+const MAX_SPEED     = 700;
+const GRAVITY       = 800;
+const OUTWARD_FORCE = 130;
+const GENTLE_FORCE  = 12;
+
+const SPIN_FACTOR   = 0.010;
+
+const JET_STRENGTH  = 145000;
+const JET_RADIUS    = 120;
+const JET_HEIGHT    = 150;
+
+const ROT_OMEGA = { x: 0.2, y: 0.1, z: 0.05 };
+const ROT_FORCE_SCALE = 15;
+const DRUM_ROT_SPEED  = 0.2;
 
 // Zieh-Einstellungen
 let BALL_COUNT      = 50;
@@ -1088,12 +1003,6 @@ let pendingResult = null; // { number, isSecondPhase }
 
 // ===== Gebläse-Steuerung (Auto / Schütteln / Pusten) =====
 const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-
-// Body markieren, falls echtes Mobile
-if (isMobileDevice && document.body) {
-  document.body.classList.add('is-mobile');
-}
-
 
 let blowerMode = 'auto';           // 'auto' | 'shake' | 'blow'
 let lastShakeStrength = 0;         // Stärke des Schüttelns
