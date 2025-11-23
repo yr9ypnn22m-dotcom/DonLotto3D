@@ -212,6 +212,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.setClearColor(0x000000, 0);
 
 // ===== Trommel immer vollständig im Sichtfeld halten =====
+// ===== Trommel immer vollständig im Sichtfeld halten =====
 function fitDrumInView() {
   if (!camera || !canvas) return;
 
@@ -219,37 +220,45 @@ function fitDrumInView() {
   const radius = DRUM_RADIUS_WORLD * 1.05;
 
   // Kamera-FOV in Radiant
-  const fov   = camera.fov * Math.PI / 180;
-  const tanH  = Math.tan(fov / 2);
+  const fov  = camera.fov * Math.PI / 180;
+  const tanH = Math.tan(fov / 2);
 
-  // aktuelles Aspect Ratio
-  let aspect = camera.aspect;
-  if (!aspect || !isFinite(aspect)) {
-    const w = canvas.clientWidth  || canvas.width;
-    const h = canvas.clientHeight || canvas.height || 1;
-    aspect = w / h;
-  }
+  // aktuelle Canvasgröße
+  const width  = canvas.clientWidth  || canvas.width;
+  const height = canvas.clientHeight || canvas.height || 1;
+  const aspect = width / height;
 
   // Abstand, der nötig ist, um die Trommel vertikal zu zeigen
   const distVert  = radius / tanH;
 
-  // Abstand für horizontale Sicht
+  // Abstand, der nötig wäre, um sie horizontal komplett zu zeigen
   const distHoriz = radius / (tanH * aspect);
 
-  // Wir brauchen den größeren Abstand
-  const needed = Math.max(distVert, distHoriz);
+  // „hoher“ Screen = Hochformat / sehr schmal
+  const tallScreen = aspect < 0.8;
 
-  // Aktuelle Kamerarichtung beibehalten
-  const curPos = camera.position.clone();
-  const dir    = curPos.clone().normalize();
+  // Desktop / Querformat: volle Sicht in beide Richtungen
+  // Hochformat: mehr Zoom, damit links/rechts kaum Rand bleibt
+  const needed = tallScreen ? distVert : Math.max(distVert, distHoriz);
 
-  // Niemals näher als vorher RANGE vergrößern – Desktop bleibt groß
+  // aktuelle Kamerarichtung beibehalten
+  const curPos    = camera.position.clone();
+  const dir       = curPos.clone().normalize();
   const curDist   = curPos.length();
   const targetDist = Math.max(curDist, needed);
 
   camera.position.copy(dir.multiplyScalar(targetDist));
-  camera.lookAt(0, 0, 0);
+
+  if (tallScreen) {
+    // im Hochformat den Blickpunkt etwas nach unten verschieben,
+    // damit der untere Teil der Trommel / Sockel besser im Bild ist
+    camera.lookAt(0, -0.8, 0);
+  } else {
+    // Desktop / Querformat wie gehabt
+    camera.lookAt(0, 0, 0);
+  }
 }
+
 
 
 // ===== Licht – frisches Studio-Setup =====

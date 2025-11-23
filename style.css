@@ -575,8 +575,7 @@ input[type="number"]:focus {
   #canvas-area {
     width: 100%;
     max-width: 600px;
-    /* statt: height:auto + aspect-ratio */
-    height: min(420px, 60vh);
+    height: min(520px, 70vh);
     margin-bottom: 10px;
   }
 
