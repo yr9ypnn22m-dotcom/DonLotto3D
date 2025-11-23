@@ -26,6 +26,7 @@ const starColorSelect = document.getElementById('star-color');
 // Presets
 const presetSelect = document.getElementById('presetSelect');
 const blowerModeSelect = document.getElementById('blower-mode');
+const blowHintEl = document.getElementById('blow-hint');
 
 // Audio
 const soundAir     = document.getElementById('sound-air');
@@ -77,6 +78,12 @@ muteButton.addEventListener("click", () => {
 
 function playSafe(audio) {
   if (!audio || soundMuted) return;
+
+  // Wind-Sound nur im Auto-Gebläse-Modus erlauben
+  if (audio === soundAir && blowerMode !== 'auto') {
+    return;
+  }
+
   try {
     audio.currentTime = 0;
     audio.play();
@@ -2307,6 +2314,15 @@ function animate(timestamp) {
   const dtSim = dt;
 
   lastShakeStrength *= 0.98;
+
+  // Hinweis nur im Puste-Modus während des Wirbelns anzeigen
+  if (blowHintEl) {
+    if (mode === 'airblast' && blowerMode === 'blow') {
+      blowHintEl.classList.add('visible');
+    } else {
+      blowHintEl.classList.remove('visible');
+    }
+  }
 
 // Trommel dreht nur beim Wirbeln / Ziehen, nicht im Fokus
 if (mode === 'airblast' || mode === 'drawing') {
