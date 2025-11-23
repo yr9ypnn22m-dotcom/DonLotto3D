@@ -278,45 +278,37 @@ const DRUM_ROT_SPEED  = 0.2;
 function fitDrumInView() {
   if (!camera || !canvas) return;
 
-  const width  = canvas.clientWidth  || canvas.width;
-  const height = canvas.clientHeight || canvas.height || 1;
+  const width  = canvas.clientWidth;
+  const height = canvas.clientHeight || 1;
+
   const aspect = width / height;
 
-  // Hochformat / „hoher“ Screen
-  const tallScreen = aspect < 0.9;
+  const radius = DRUM_RADIUS_WORLD;
 
-  // Trommelradius + Rand – im Hochformat etwas großzügiger,
-  // damit auch der Sockel berücksichtigt wird
-  const baseFactor = tallScreen ? 1.35 : 1.05;
-  const radius = DRUM_RADIUS_WORLD * baseFactor;
+  // Ziel: Kugel nutzt ~95% der Breite
+  const targetFill = 0.95;
 
+  // Kamerawinkel in Radiant
   const fov  = camera.fov * Math.PI / 180;
   const tanH = Math.tan(fov / 2);
 
-  // Abstand, der nötig ist, um die Trommel vertikal zu zeigen
-  const distVert  = radius / tanH;
+  // Abstand für horizontales Einpassen
+  const distHoriz = (radius / (tanH * aspect)) / targetFill;
 
-  // Abstand, der nötig ist, um sie horizontal auf volle Breite zu bringen
-  const distHoriz = radius / (tanH * aspect);
+  // Abstand für vertikale Sicherheit (damit oben/unten nicht abgeschnitten)
+  const distVert = radius / (tanH * 0.95);
 
-  // Desktop / Querformat: wie bisher – alles komplett im Bild
-  // Hochformat: lieber die Breite ausnutzen (distHoriz), oben darf etwas fehlen
-  const needed = tallScreen ? distHoriz : Math.max(distVert, distHoriz);
+  // Passe horizontal ein → breite Darstellung
+  let needed = Math.max(distHoriz, distVert * 0.7);
 
-  const curPos    = camera.position.clone();
-  const dir       = curPos.clone().normalize();
-  const curDist   = curPos.length();
-  const targetDist = Math.max(curDist, needed);
+  // Kamerarichtung beibehalten
+  const dir = camera.position.clone().normalize();
+  camera.position.copy(dir.multiplyScalar(needed));
 
-  camera.position.copy(dir.multiplyScalar(targetDist));
-
-  if (tallScreen) {
-    // leicht nach unten schauen, damit der untere Teil & Sockel gut sichtbar sind
-    camera.lookAt(0, -0.6, 0);
-  } else {
-    camera.lookAt(0, 0, 0);
-  }
+  // Leicht nach unten sehen → Sockel sichtbar
+  camera.lookAt(0, -0.5, 0);
 }
+
 
 // Canvas und Kamera einmal korrekt auf die aktuelle Größe einstellen
 resizeRendererToDisplaySize();
