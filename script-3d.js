@@ -134,24 +134,27 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 function resizeRendererToDisplaySize() {
   if (!canvas || !renderer || !camera) return;
 
-  const width = canvas.clientWidth;
+  const width  = canvas.clientWidth;
   const height = canvas.clientHeight;
 
-  // Falls CSS-Höhe noch nicht gesetzt ist, abbrechen
   if (!width || !height) return;
 
   const needResize = canvas.width !== width || canvas.height !== height;
 
   if (needResize) {
-    // nur die tatsächliche Render-Auflösung setzen, CSS-Größe macht das Layout
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+
+    // Trommel automatisch vollständig sichtbar machen
+    fitDrumInView();
   }
 }
 
 // einmal beim Start ausführen
 resizeRendererToDisplaySize();
+
+fitDrumInView();
 
 // auf Fenster- / Orientierungswechsel reagieren
 window.addEventListener('resize', resizeRendererToDisplaySize);
@@ -165,6 +168,47 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 
 // Nichts deckend löschen → komplett transparent
 renderer.setClearColor(0x000000, 0);
+
+// ===== Trommel immer vollständig im Sichtfeld halten =====
+function fitDrumInView() {
+  if (!camera || !canvas) return;
+
+  // Trommelradius + kleiner Rand
+  const radius = DRUM_RADIUS_WORLD * 1.05;
+
+  // Kamera-FOV in Radiant
+  const fov   = camera.fov * Math.PI / 180;
+  const tanH  = Math.tan(fov / 2);
+
+  // aktuelles Aspect Ratio
+  let aspect = camera.aspect;
+  if (!aspect || !isFinite(aspect)) {
+    const w = canvas.clientWidth  || canvas.width;
+    const h = canvas.clientHeight || canvas.height || 1;
+    aspect = w / h;
+  }
+
+  // Abstand, der nötig ist, um die Trommel vertikal zu zeigen
+  const distVert  = radius / tanH;
+
+  // Abstand für horizontale Sicht
+  const distHoriz = radius / (tanH * aspect);
+
+  // Wir brauchen den größeren Abstand
+  const needed = Math.max(distVert, distHoriz);
+
+  // Aktuelle Kamerarichtung beibehalten
+  const curPos = camera.position.clone();
+  const dir    = curPos.clone().normalize();
+
+  // Niemals näher als vorher RANGE vergrößern – Desktop bleibt groß
+  const curDist   = curPos.length();
+  const targetDist = Math.max(curDist, needed);
+
+  camera.position.copy(dir.multiplyScalar(targetDist));
+  camera.lookAt(0, 0, 0);
+}
+
 
 // ===== Licht – frisches Studio-Setup =====
 // etwas wärmer & heller
