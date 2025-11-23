@@ -534,3 +534,86 @@ input[type="number"]:focus {
 #blow-hint.visible {
   opacity: 1;
 }
+
+
+/* === MOBILE LAYOUT (bis ca. 900px Breite) === */
+@media (max-width: 900px) {
+
+  body {
+    align-items: flex-start;
+    height: auto;
+    min-height: 100vh;
+    padding: 8px 6px 16px;
+  }
+
+  #wrapper {
+    width: 100%;
+    align-items: center;
+  }
+
+  #gameContainer {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px 10px 16px;
+  }
+
+  /* Logo über der Trommel in voller Breite */
+  #logo-frame {
+    width: 100%;
+    max-width: 600px;
+    height: 90px;
+    margin-bottom: 10px;
+  }
+
+  #logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Canvas nutzt volle Breite, etwas höhere Bühne im Hochformat */
+  #canvas-area {
+    width: 100%;
+    max-width: 600px;
+    height: min(520px, 70vh);
+    margin-bottom: 10px;
+  }
+
+  #lotto-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* UI unter der Trommel, einspaltig */
+  #ui {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  #controlsLeft {
+    width: 100%;
+  }
+
+  #buttonsRow {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  #buttonsRow button,
+  #muteButton {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 140px;
+    text-align: center;
+  }
+
+  #results {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  #lastDrawn {
+    align-self: stretch;
+  }
+}

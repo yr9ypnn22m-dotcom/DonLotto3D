@@ -127,13 +127,43 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: true
 });
+
+// Standard-Startgröße, wird gleich von resizeRendererToDisplaySize() überschrieben
 renderer.setSize(W, H);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputEncoding = THREE.sRGBEncoding;
 
-
 // Nichts deckend löschen → komplett transparent
 renderer.setClearColor(0x000000, 0);
+
+// === Responsive Canvas-Größe (Desktop & Mobile) ===
+function resizeRendererToDisplaySize() {
+  if (!canvas || !renderer || !camera) return;
+
+  const width  = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  if (!width || !height) return;
+
+  const needResize = canvas.width !== width || canvas.height !== height;
+
+  if (needResize) {
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    // Falls fitDrumInView später definiert ist: Kamera nachziehen
+    if (typeof fitDrumInView === 'function') {
+      fitDrumInView();
+    }
+  }
+}
+
+// auf Fenster- / Orientierungswechsel reagieren
+window.addEventListener('resize', resizeRendererToDisplaySize);
+window.addEventListener('orientationchange', () => {
+  setTimeout(resizeRendererToDisplaySize, 250);
+});
 
 // ===== Licht – frisches Studio-Setup =====
 // etwas wärmer & heller
@@ -219,6 +249,52 @@ const JET_HEIGHT    = 150;
 const ROT_OMEGA = { x: 0.2, y: 0.1, z: 0.05 };
 const ROT_FORCE_SCALE = 15;
 const DRUM_ROT_SPEED  = 0.2;
+// ===== Trommel immer vollständig im Sichtfeld halten =====
+function fitDrumInView() {
+  if (!camera || !canvas) return;
+
+  const width  = canvas.clientWidth  || canvas.width;
+  const height = canvas.clientHeight || canvas.height || 1;
+  const aspect = width / height;
+
+  // Hochformat / „hoher“ Screen
+  const tallScreen = aspect < 0.9;
+
+  // Trommelradius + Rand – im Hochformat etwas großzügiger,
+  // damit auch der Sockel berücksichtigt wird
+  const baseFactor = tallScreen ? 1.35 : 1.05;
+  const radius = DRUM_RADIUS_WORLD * baseFactor;
+
+  const fov  = camera.fov * Math.PI / 180;
+  const tanH = Math.tan(fov / 2);
+
+  // Abstand, der nötig ist, um die Trommel vertikal zu zeigen
+  const distVert  = radius / tanH;
+
+  // Abstand, der nötig ist, um sie horizontal auf volle Breite zu bringen
+  const distHoriz = radius / (tanH * aspect);
+
+  // Desktop / Querformat: wie bisher – alles komplett im Bild
+  // Hochformat: lieber die Breite ausnutzen (distHoriz), oben darf etwas fehlen
+  const needed = tallScreen ? distHoriz : Math.max(distVert, distHoriz);
+
+  const curPos    = camera.position.clone();
+  const dir       = curPos.clone().normalize();
+  const curDist   = curPos.length();
+  const targetDist = Math.max(curDist, needed);
+
+  camera.position.copy(dir.multiplyScalar(targetDist));
+
+  if (tallScreen) {
+    // leicht nach unten schauen, damit der untere Teil & Sockel gut sichtbar sind
+    camera.lookAt(0, -0.6, 0);
+  } else {
+    camera.lookAt(0, 0, 0);
+  }
+}
+
+// Canvas und Kamera einmal korrekt auf die aktuelle Größe einstellen
+resizeRendererToDisplaySize();
 
 // Zieh-Einstellungen
 let BALL_COUNT      = 50;
