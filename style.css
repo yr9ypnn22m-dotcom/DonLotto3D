@@ -571,12 +571,12 @@ input[type="number"]:focus {
     object-fit: contain;
   }
 
-  /* Canvas nutzt volle Breite, große Trommel im Hochformat */
+  /* Canvas nutzt volle Breite, mit fixer, aber flexibler Höhe */
   #canvas-area {
     width: 100%;
     max-width: 600px;
-    height: auto;
-    aspect-ratio: 16 / 10;
+    /* statt: height:auto + aspect-ratio */
+    height: min(420px, 60vh);
     margin-bottom: 10px;
   }
 
