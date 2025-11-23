@@ -651,7 +651,7 @@ input[type="number"]:focus {
   #canvas-area {
     width: 100%;
     max-width: 100%;
-    height: min(520px, 70vh);
+    height: calc(80vh - 120px);
     margin-bottom: 10px;
   }
 
