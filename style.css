@@ -574,7 +574,7 @@ input[type="number"]:focus {
   /* Canvas nutzt volle Breite, etwas höhere Bühne im Hochformat */
   #canvas-area {
     width: 100%;
-    max-width: 600px;
+    max-width: 100%;
     height: min(520px, 70vh);
     margin-bottom: 10px;
   }
@@ -650,8 +650,8 @@ input[type="number"]:focus {
   /* Canvas im Hochformat: sehr hoch, volle Breite */
   #canvas-area {
     width: 100%;
-    max-width: 600px;
-    height: calc(80vh - 120px); /* große Bühne im Hochformat */
+    max-width: 100%;
+    height: min(520px, 70vh);
     margin-bottom: 10px;
   }
 
