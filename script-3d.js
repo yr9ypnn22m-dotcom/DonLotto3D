@@ -49,6 +49,7 @@ const statsMainList = document.getElementById('statsMainList');
 const statsStarList = document.getElementById('statsStarList');
 
 // Statistik-Parameter
+let statDraw = false ;
 // let euroDraws         = null;11:34 21.11.2025
 // let statsWeightsMain  = null;  // 1..50
 // let statsWeightsStars = null;  // 1..12
@@ -128,6 +129,37 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(W, H);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// === Responsive Canvas-Größe (Desktop & Mobile) ===
+function resizeRendererToDisplaySize() {
+  if (!canvas || !renderer || !camera) return;
+
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  // Falls CSS-Höhe noch nicht gesetzt ist, abbrechen
+  if (!width || !height) return;
+
+  const needResize = canvas.width !== width || canvas.height !== height;
+
+  if (needResize) {
+    // nur die tatsächliche Render-Auflösung setzen, CSS-Größe macht das Layout
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+}
+
+// einmal beim Start ausführen
+resizeRendererToDisplaySize();
+
+// auf Fenster- / Orientierungswechsel reagieren
+window.addEventListener('resize', resizeRendererToDisplaySize);
+window.addEventListener('orientationchange', () => {
+  // kleines Delay, bis der Browser die neue Größe berechnet hat
+  setTimeout(resizeRendererToDisplaySize, 250);
+});
+
 renderer.outputEncoding = THREE.sRGBEncoding;
 
 
@@ -1002,6 +1034,12 @@ let pendingResult = null; // { number, isSecondPhase }
 
 // ===== Gebläse-Steuerung (Auto / Schütteln / Pusten) =====
 const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+// Body markieren, falls echtes Mobile
+if (isMobileDevice && document.body) {
+  document.body.classList.add('is-mobile');
+}
+
 
 let blowerMode = 'auto';           // 'auto' | 'shake' | 'blow'
 let lastShakeStrength = 0;         // Stärke des Schüttelns
@@ -2108,7 +2146,12 @@ if (t >= 1) {
 
         if (drawButton) {
           drawButton.disabled = false;
-          drawButton.textContent = 'Ziehung starten 💨';
+          statButton.disabled = false;
+          if (statDraw === false) {
+            drawButton.textContent = 'Ziehung starten 💨';
+          } else {
+            statButton.textContent = 'Euromillions Statistik-Tipp 💨';
+          }
         }
       } else {
         // Nächste Kugel: erst wieder wirbeln, dann ziehen
@@ -2145,7 +2188,12 @@ function startDrawSequence() {
 
   if (drawButton) {
     drawButton.disabled = true;
-    drawButton.textContent = 'Ziehung läuft…';
+    statButton.disabled = true;
+    if (statDraw === false) {
+      drawButton.textContent = 'Ziehung läuft...';
+    } else {
+      statButton.textContent = 'Ziehung läuft...';
+    }
   }
   playSafe(soundAir);
 }
@@ -2181,7 +2229,14 @@ function resetAll() {
   initBalls(BALL_COUNT, true);
   if (drawButton) {
     drawButton.disabled = false;
-    drawButton.textContent = 'Ziehung starten 💨';
+    statButton.disabled = false;
+    if (statDraw === false) {
+      drawButton.textContent = 'Ziehung starten 💨';
+    } else {
+      statButton.textContent = 'Euromillions Statistik-Tipp 💨';
+    }
+    statDraw = false;
+
   }
 }
 
@@ -2381,6 +2436,7 @@ if (blowerModeSelect) {
   });
 }
 if (drawButton) {
+  statDraw = false;
   drawButton.addEventListener('click', () => {
     if (mode !== 'idle') return;
     // normale Zufallsziehung
@@ -2392,6 +2448,7 @@ if (drawButton) {
 }
 
 if (statButton) {
+  statDraw = true;
   statButton.addEventListener('click', async () => {
     if (mode !== 'idle') return;
 
@@ -2406,6 +2463,7 @@ if (statButton) {
     readInputs();
 
     statModeActive = true;
+    statDraw = true;
     await prepareStatPlannedNumbers();
 
     if (!statModeActive || !plannedMainNumbers || plannedMainNumbers.length === 0) {
