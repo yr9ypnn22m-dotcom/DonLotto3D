@@ -303,7 +303,7 @@ function fitDrumInView() {
   const widthRadius = portrait ? radius * 1.20 : radius;
 
   // Wie stark die Trommel die Breite füllen soll
-  const targetFill = portrait ? 1.02 : 0.95; // Handy: praktisch volle Breite
+  const targetFill = portrait ? 1.12 : 0.99; // Handy: praktisch volle Breite
 
   const fov  = camera.fov * Math.PI / 180;
   const tanH = Math.tan(fov / 2);
