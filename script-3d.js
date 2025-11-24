@@ -289,33 +289,35 @@ function fitDrumInView() {
   const height = canvas.clientHeight || canvas.height || 1;
   if (!width || !height) return;
 
+  const portrait = height > width;  // Hochformat?
+
   // Seitenverhältnis aktualisieren
   camera.aspect = width / height;
   camera.fov = CAMERA_BASE_FOV;
   camera.updateProjectionMatrix();
 
-  const radius = DRUM_RADIUS_WORLD;   // Kugel-Radius in Weltkoordinaten
-  const targetFill = 0.95;            // 95% der Breite ausfüllen
-
-  // FOV in Radiant
+  const radius = DRUM_RADIUS_WORLD;
+  const targetFill = portrait ? 1.05 : 0.95;   // mobil etwas aggressiver zoomen
   const fov  = camera.fov * Math.PI / 180;
   const tanH = Math.tan(fov / 2);
 
-  // Abstand, damit die Kugel horizontal 95% der Breite nutzt
+  // Abstand, damit die Kugel horizontal X% der Breite nutzt
   const distHoriz = (radius / (tanH * camera.aspect)) / targetFill;
 
-  // Abstand, damit oben/unten sicher alles drin ist (10–15 % Reserve)
-  const distVert  = radius / (tanH * 0.80);   // etwas mehr Luft als 0.9
+  // deine vertikale Toleranz (passt bei dir ja schon gut)
+  const distVert  = radius / (tanH * 0.80);
 
-  // Wichtig: vertikale Anforderung NICHT runterskalieren
-  const dist = Math.max(distHoriz, distVert);
+  // Desktop: „sicher“ (Breite ODER Höhe begrenzt)
+  // Mobile/Portrait: bewusst an der Breite ausrichten (größer im Bild)
+  let dist = portrait ? distHoriz : Math.max(distHoriz, distVert);
 
   // Kamera-Position aus fester Richtung + neuem Abstand
   camera.position.copy(CAMERA_DIR.clone().multiplyScalar(dist));
 
-  // leicht nach unten schauen, damit Sockel nicht abgeschnitten wird
-  camera.lookAt(0, -0.3, 0);
+  // Exakt auf das Trommelzentrum schauen → wirklich mittig
+  camera.lookAt(0, 0, 0);
 }
+
 
 
 // Canvas und Kamera einmal korrekt auf die aktuelle Größe einstellen
