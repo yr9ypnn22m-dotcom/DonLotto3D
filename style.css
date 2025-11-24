@@ -647,11 +647,11 @@ input[type="number"]:focus {
     margin-bottom: 10px;
   }
 
-  /* Canvas im Hochformat: sehr hoch, volle Breite */
+  /* Canvas im Hochformat: volle Breite, aber nicht zu hoch */
   #canvas-area {
     width: 100%;
     max-width: 100%;
-    height: calc(80vh - 120px);
+    height: min(520px, 70vh);  /* wie im Mobile-Block oben */
     margin-bottom: 10px;
   }
 
