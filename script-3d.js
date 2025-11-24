@@ -281,7 +281,6 @@ const fakeEnv = new THREE.CubeTextureLoader().load([
 ]);
 
 // ===== Trommel immer vollständig im Sichtfeld halten =====
-// ===== Trommel an die verfügbare Breite anpassen =====
 function fitDrumInView() {
   if (!camera || !canvas) return;
 
@@ -289,34 +288,41 @@ function fitDrumInView() {
   const height = canvas.clientHeight || canvas.height || 1;
   if (!width || !height) return;
 
-  const portrait = height > width;  // Hochformat?
+  const portrait = height > width;
 
-  // Seitenverhältnis aktualisieren
+  // Kamera-Geometrie aktualisieren
   camera.aspect = width / height;
   camera.fov = CAMERA_BASE_FOV;
   camera.updateProjectionMatrix();
 
   const radius = DRUM_RADIUS_WORLD;
-  const targetFill = portrait ? 1.05 : 0.95;   // mobil etwas aggressiver zoomen
+
+  // Wie stark die Kugel die Breite füllen soll
+  const targetFill = portrait ? 0.99 : 0.95; // Handy: fast volle Breite
+
   const fov  = camera.fov * Math.PI / 180;
   const tanH = Math.tan(fov / 2);
 
-  // Abstand, damit die Kugel horizontal X% der Breite nutzt
-  const distHoriz = (radius / (tanH * camera.aspect)) / targetFill;
+  // Abstand, damit die Kugel horizontal targetFill der Breite nutzt
+  const distHoriz = radius / (tanH * camera.aspect * targetFill);
 
-  // deine vertikale Toleranz (passt bei dir ja schon gut)
+  // Deine vertikale Toleranz (oben/unten Reserve)
   const distVert  = radius / (tanH * 0.80);
 
-  // Desktop: „sicher“ (Breite ODER Höhe begrenzt)
-  // Mobile/Portrait: bewusst an der Breite ausrichten (größer im Bild)
+  // Desktop: Breite ODER Höhe begrenzt, Handy: eher Breite zählen lassen
   let dist = portrait ? distHoriz : Math.max(distHoriz, distVert);
 
-  // Kamera-Position aus fester Richtung + neuem Abstand
-  camera.position.copy(CAMERA_DIR.clone().multiplyScalar(dist));
+  // Kamera-Position aus fester Richtung
+  const pos = CAMERA_DIR.clone().multiplyScalar(dist);
 
-  // Exakt auf das Trommelzentrum schauen → wirklich mittig
+  // Falls sich CAMERA_DIR jemals ändert: X hart auf 0 → wirklich mittig
+  pos.x = 0;
+  camera.position.copy(pos);
+
+  // Exakt auf Trommelzentrum schauen → perfekt zentriert
   camera.lookAt(0, 0, 0);
 }
+
 
 
 
