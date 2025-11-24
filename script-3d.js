@@ -281,6 +281,7 @@ const fakeEnv = new THREE.CubeTextureLoader().load([
 ]);
 
 // ===== Trommel immer vollständig im Sichtfeld halten =====
+// ===== Trommel immer vollständig im Sichtfeld halten =====
 function fitDrumInView() {
   if (!camera || !canvas) return;
 
@@ -297,31 +298,37 @@ function fitDrumInView() {
 
   const radius = DRUM_RADIUS_WORLD;
 
-  // Wie stark die Kugel die Breite füllen soll
-  const targetFill = portrait ? 0.99 : 0.95; // Handy: fast volle Breite
+  // Effektiver Radius für die Breite:
+  // im Hochformat etwas größer ansetzen, damit Rahmen + Sockel mit berücksichtigt werden
+  const widthRadius = portrait ? radius * 1.20 : radius;
+
+  // Wie stark die Trommel die Breite füllen soll
+  const targetFill = portrait ? 1.02 : 0.95; // Handy: praktisch volle Breite
 
   const fov  = camera.fov * Math.PI / 180;
   const tanH = Math.tan(fov / 2);
 
-  // Abstand, damit die Kugel horizontal targetFill der Breite nutzt
-  const distHoriz = radius / (tanH * camera.aspect * targetFill);
+  // Abstand, damit die Trommel horizontal targetFill der Breite nutzt
+  const distHoriz = widthRadius / (tanH * camera.aspect * targetFill);
 
-  // Deine vertikale Toleranz (oben/unten Reserve)
+  // Deine vertikale Toleranz (oben/unten Reserve) bleibt wie gewünscht
   const distVert  = radius / (tanH * 0.80);
 
-  // Desktop: Breite ODER Höhe begrenzt, Handy: eher Breite zählen lassen
-  let dist = portrait ? distHoriz : Math.max(distHoriz, distVert);
+  // Desktop: Breite ODER Höhe begrenzt
+  // Handy (portrait): konsequent an der Breite ausrichten
+  const dist = portrait ? distHoriz : Math.max(distHoriz, distVert);
 
   // Kamera-Position aus fester Richtung
   const pos = CAMERA_DIR.clone().multiplyScalar(dist);
 
-  // Falls sich CAMERA_DIR jemals ändert: X hart auf 0 → wirklich mittig
+  // Sicherheit: wirklich mittig in X
   pos.x = 0;
   camera.position.copy(pos);
 
   // Exakt auf Trommelzentrum schauen → perfekt zentriert
   camera.lookAt(0, 0, 0);
 }
+
 
 
 
